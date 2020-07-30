@@ -11,13 +11,18 @@ const rows = 4;
 const brickWidth =
   (canvasWidth - (bricksPerRow - 1) * spaceBetween) / bricksPerRow;
 
-const bricks = new Array(rows).fill(new Array(bricksPerRow).fill(new Brick()));
-
+const bricks = [];
+for (let i = 0; i < rows; i++) {
+  bricks[i] = [];
+  for (let j = 0; j < bricksPerRow; j++) {
+    bricks[i][j] = new Brick();
+  }
+}
 const ballRadius = 10;
 let ballX = canvasWidth / 2 - ballRadius;
 let ballY = canvasHeight / 2 - ballRadius;
-let dx = 1.3;
-let dy = -1.3;
+let dx = 1.5 + Math.random() * 2;
+let dy = -2.3;
 
 const paddleWidth = 60;
 const paddleHeight = 20;
@@ -55,6 +60,7 @@ function drawBricks() {
       }
     }
   }
+  bricks[0][0].x = 1;
 }
 
 function drawBall() {
@@ -90,7 +96,24 @@ function checkForCollisions() {
   }
 }
 
-function checkForBrickCollisions() {}
+function checkForBrickCollisions() {
+  for (let i = 0; i < rows; i++) {
+    for (let j = 0; j < bricksPerRow; j++) {
+      console.log(ballY, bricks[i][j].y);
+      const curBrick = bricks[i][j];
+      if (
+        ballX > curBrick.x &&
+        ballX < curBrick.x + brickWidth &&
+        ballY > curBrick.y &&
+        ballY < curBrick.y + brickHeight &&
+        curBrick.isVisible
+      ) {
+        dy = -dy;
+        curBrick.isVisible = false;
+      }
+    }
+  }
+}
 
 function moveBall() {
   checkForCollisions();
@@ -106,4 +129,6 @@ function play() {
   init();
 }
 
+init();
+console.log(bricks);
 playInterval = setInterval(play, 10);
