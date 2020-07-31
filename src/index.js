@@ -1,5 +1,13 @@
-import { fromEvent } from "rxjs";
-import { map, pairwise } from "rxjs/operators";
+import { fromEvent, interval } from "rxjs";
+import {
+  map,
+  pairwise,
+  mergeMap,
+  takeWhile,
+  switchMap,
+  filter,
+  tap,
+} from "rxjs/operators";
 import Brick from "./Brick";
 
 const canvasWidth = 400;
@@ -30,23 +38,13 @@ const bottomOffset = 20;
 let paddleX = 0;
 let paddleY = canvasHeight - paddleHeight - bottomOffset;
 
-let playInterval = null;
-
 const canvas = document.querySelector("canvas");
 canvas.width = 400;
 canvas.height = 800;
 const range = document.getElementById("range");
 const color = document.getElementById("color");
-const mouseDown$ = fromEvent(canvas, "mousedown");
-const mouseMove$ = fromEvent(canvas, "mousemove");
 
 const ctx = canvas.getContext("2d");
-
-const stream$ = mouseMove$.pipe(map((e) => e.offsetX));
-stream$.subscribe((x) => {
-  if (x + paddleWidth / 2 < canvasWidth && x - paddleWidth / 2 > 0)
-    paddleX = x - paddleWidth / 2;
-});
 
 function drawBricks() {
   for (let i = 0; i < rows; i++) {
@@ -89,17 +87,11 @@ function checkForCollisions() {
   ) {
     dy = -dy;
   }
-
-  if (ballY + dy + ballRadius > canvasHeight) {
-    clearInterval(playInterval);
-    init();
-  }
 }
 
 function checkForBrickCollisions() {
   for (let i = 0; i < rows; i++) {
     for (let j = 0; j < bricksPerRow; j++) {
-      console.log(ballY, bricks[i][j].y);
       const curBrick = bricks[i][j];
       if (
         ballX > curBrick.x &&
@@ -129,6 +121,14 @@ function play() {
   init();
 }
 
-init();
-console.log(bricks);
-playInterval = setInterval(play, 10);
+const playInterval$ = interval(10).pipe(
+  takeWhile(() => ballY + dy + ballRadius < canvasHeight)
+);
+
+playInterval$.subscribe(play);
+
+const stream$ = fromEvent(canvas, "mousemove").pipe(map((e) => e.offsetX));
+stream$.subscribe((x) => {
+  if (x + paddleWidth / 2 < canvasWidth && x - paddleWidth / 2 > 0)
+    paddleX = x - paddleWidth / 2;
+});
